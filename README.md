@@ -1,0 +1,2 @@
+# bms_node_expoter
+裸金属基于node_expoter二次开发适配
