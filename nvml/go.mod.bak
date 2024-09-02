@@ -1,0 +1,3 @@
+module nvml
+
+go 1.13
