@@ -10,4 +10,5 @@ const (
 var (
 	gpuLabelNames        = []string{"hostname", "id", "uuid", "type"}
 	gpuGeneralLabelNames = []string{"hostname", "type", "gpuDriverVersion"}
+	gpuCountNames = []string{"hostname"}
 )

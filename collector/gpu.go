@@ -140,7 +140,7 @@ func NewGpuCollector(logger log.Logger) (Collector, error) {
 		gpuCount: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, gpuCollectorSubsystem, "gpuCount"),
 			"Number of GPUs.",
-			gpuGeneralLabelNames, nil,
+			gpuCountNames, nil,
 		),
 	}, nil
 }
@@ -158,6 +158,7 @@ func (this *gpuCollector) updateStat(ch chan<- prometheus.Metric) error {
 		return err
 	}
 
+	seen := make(map[string]bool)
 	for _, gpuStat := range stats {
 		ch <- prometheus.MustNewConstMetric(this.total, prometheus.GaugeValue, float64(gpuStat.TotalMem/1024/1024), gpuStat.Host, gpuStat.ID, gpuStat.UUID, gpuStat.Types)
 		ch <- prometheus.MustNewConstMetric(this.used, prometheus.GaugeValue, float64(gpuStat.UsedMem/1024/1024), gpuStat.Host, gpuStat.ID, gpuStat.UUID, gpuStat.Types)
@@ -177,7 +178,12 @@ func (this *gpuCollector) updateStat(ch chan<- prometheus.Metric) error {
 		ch <- prometheus.MustNewConstMetric(this.powerState, prometheus.GaugeValue, float64(gpuStat.PowerState), gpuStat.Host, gpuStat.ID, gpuStat.UUID, gpuStat.Types)
 		ch <- prometheus.MustNewConstMetric(this.powerUsage, prometheus.GaugeValue, gpuStat.PowerUsage, gpuStat.Host, gpuStat.ID, gpuStat.UUID, gpuStat.Types)
 		ch <- prometheus.MustNewConstMetric(this.temperatureThreshold, prometheus.GaugeValue, float64(gpuStat.TemperatureThreshold), gpuStat.Host, gpuStat.ID, gpuStat.UUID, gpuStat.Types)
-		ch <- prometheus.MustNewConstMetric(this.gpuCount, prometheus.GaugeValue, float64(GpuCount), gpuStat.Host,gpuStat.Types,GPUDriverVersion)
+		key := gpuStat.Host + gpuStat.Types
+		if _, exists := seen[key]; exists {
+			continue // 如果已经收集过则跳过
+		}
+		seen[key] = true
+		ch <- prometheus.MustNewConstMetric(this.gpuCount, prometheus.GaugeValue, float64(GpuCount), gpuStat.Host)
 		ch <- prometheus.MustNewConstMetric(this.gpuDriverVersion, prometheus.GaugeValue, 1, gpuStat.Host, gpuStat.Types, GPUDriverVersion)
 	}
 	return nil
